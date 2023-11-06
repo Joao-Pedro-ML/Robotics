@@ -1,9 +1,14 @@
 %% Exercício 1
+a0 = 0; alpha0 = 0; d0 = 0; theta0 = "q0";
 a1 = 0; alpha1 = 0; d1 = 50; theta1 = "q1";
 a2 = 50; alpha2 = -pi/2; d2 = 0; theta2 = "q2";
 a3 = 50; alpha3 = 0; d3 = 0; theta3 = "q3";
 a4 = 0; alpha4 = -pi/2; d4 = 0; theta4 = "q4";
 a5 = 0; alpha5 = 0; d5 = 5; theta5 = "q5";
+
+link0 = rigidBody("link0");
+link0.Joint = rigidBodyJoint("joint0","revolute");
+link0.Joint.setFixedTransform([a0 alpha0 d0 0],"dh");
 
 link1 = rigidBody("link1");
 link1.Joint = rigidBodyJoint("joint1","revolute");
@@ -26,7 +31,8 @@ link5.Joint = rigidBodyJoint("joint5","revolute");
 link5.Joint.setFixedTransform([a5 alpha5 d5 0],"dh");
 
 myRobot = rigidBodyTree(DataFormat="row");
-myRobot.addBody(link1,myRobot.BaseName);
+myRobot.addBody(link0,myRobot.BaseName);
+myRobot.addBody(link1, link0.Name);
 myRobot.addBody(link2,link1.Name);
 myRobot.addBody(link3,link2.Name);
 myRobot.addBody(link4,link3.Name);
@@ -37,9 +43,10 @@ myRobot.show
 
 %% Exercício 2
 
-syms q1 q2 q3 q4 q5; 
+syms q0 q1 q2 q3 q4 q5; 
 
 dh_parameters = [
+    0, 0, 0, q0;
     0, 0, 50, q1;
     50, -pi/2, 0, q2;
     50, 0, 0, q3;
@@ -76,10 +83,51 @@ disp(T);
 
 %% Exercicio 4 e 5
 % A(50,0,70), B(50,30,20) e C(50,-30,20)
-e = ETS2.Tx(50) * ETS2.Rz("q1") * ETS2.Tx(100) * ETS2.Rz("q2") * ETS2.Tx(5);
+e = ETS3.Rz("q1")*ETS3.Tz(50)*ETS3.Rx("q2")*ETS3.Tx(50)*ETS3.Rx("q3")*ETS3.Tx(50)*ETS3.Rx("q4")*ETS3.Tz(5)*ETS3.Rz("q5");
 
-pstar = [50, 0, 70]; %posição desejada
-q = fminsearch(@(q) norm(se2(e.fkine(q)).trvec-pstar),[0 0 0])
-e.plot(q, 'workspace')
+e.plot([0 0 0 0 0])
+
+A=[50 0 70];
+B=[50 30 20];
+C=[50 -30 20];
+
+waypts = [A' B' C'];
+t = 0:0.02;10;
+[q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
+r=rateControl(50);
+i = 1;
+q = [0 0 0 0 0];
+while(1)
+    q = fminsearch(@(q) norm(se3(e.fkine(q)).trvec-[q2(1:3,i)' 0 0]), q); 
+    e.plot
+    r.waitfor;
+    if i == size(q2, 2)
+        i=0;
+    end
+    i = i + 1;
+end
+% r = rateControl(10);
+% g = [linspace(0, 2*pi, 100)'];
+% for i = 1:size(g,1)
+%     pstar = [70+20*cos(g(i)), 70+20*sin(g(i))]; %posição desejada
+%     q = fminsearch(@(q) norm(se2(e.fkine(q)).trvec-pstar),q);
+%     e.plot(q, 'workspace', [0 100 0 100 0 1])
+% 
+%     r.waitfor;
+% end
+
+%%
+% Definição das posições desejadas para formar o triângulo (A, B, C)
+
+a1 = 1; a2=1;
+
+e = ETS3.Rz("q1")*ETS3.Ry("q2")*ETS3.Tz(a1)*ETS3.Ry("q3")*...
+    ETS3.Tz(a2)*ETS3.Rz("q4")*ETS3.Ry("q5")*ETS3.Rz("q6")
+
+e.plot([0 0 0 0 0 0])
+
+
+
+
 
 

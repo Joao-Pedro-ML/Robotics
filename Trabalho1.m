@@ -41,7 +41,22 @@ myRobot.addBody(link4,link3.Name);
 myRobot.addBody(link5,link4.Name);
 
 myRobot.showdetails
-myRobot.show
+
+%myRobot.show
+
+
+T = myRobot.getTransform(deg2rad([30 40 0 0 0]),"link5")
+printtform(T,unit="deg")
+
+q = [linspace(0,pi,100)' linspace(0,pi,100)' linspace(0,pi,100)' linspace(0,pi,100)' linspace(0,pi,100)'];
+whos q
+
+
+r = rateControl(10);
+for i = 1:size(q,1)
+    myRobot.show(q(i,:),FastUpdate=true,PreservePlot=false);
+	r.waitfor;
+end
 
 %% Exercício 2
 
