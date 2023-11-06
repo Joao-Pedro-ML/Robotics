@@ -69,7 +69,7 @@ end
 
 
 for i = 1:numel(T_matrices)
-    fprintf('Matriz de transformação para elo %d:\n', i);
+    fprintf('Matriz de transformação para a junta %d:\n', i);
     disp(T_matrices{i});
 end
 
@@ -92,47 +92,45 @@ disp(T_matrices{end});
 
 %% Exercício 4
 
-%e = ETS2.Tx(a1) * ETS2.Rz("q1") * ETS2.Tx(a2) * ETS2.Tx(a3) * ETS2.Rz("q3");
-
 clear all
 close all
 
-syms a1 a2 real
-e = ETS2.Tx(50) * ETS2.Rz("q1") * ETS2.Tx(50) * ETS2.Tx(50) * ETS2.Rz("q2") * ETS2.Tx(5);
+syms a1 a2 a3 real
+e = ETS2.Tx(a1) * ETS2.Rz("q1") * ETS2.Tx(a2) * ETS2.Rz("q2") * ETS2.Tx(a3);
 
-syms q1 q2 q3 real
-TE = e.fkine([q1 q2 q3])
+syms q1 q2 real
+TE = e.fkine([q1 q2])
 transl = TE(1:2,3)';
-
 syms x y real
+
 e1 = x == transl(1)
 e2 = y == transl(2)
+e3 = z == transl(3)
 
-[s1,s2,s3] = solve([e1 e2],[q1 q2 q3])
-
-length(s2)
+[s1,s2] = solve([e1 e2],[q1 q2])
+% 
+% length(s2)
 
 %% Exercício 5
 
-% Definição das variáveis simbólicas
-syms a1 a2 real
+% Definição do robô com a sequência de transformações dada
 e = ETS2.Tx(50) * ETS2.Rz("q1") * ETS2.Tx(50) * ETS2.Tx(50) * ETS2.Rz("q2") * ETS2.Tx(5);
 
-% Define as equações para a cinemática inversa
-syms q1 q2 q3 real
-TE = e.fkine([q1 q2 q3]);
-transl = TE(1:3, 3);
+% Definição dos pontos A, B e C
+A = [50, 0, 70];
+B = [50, 30, 20];
+C = [50, -30, 20];
 
-% Define as coordenadas dos vértices do triângulo
-A = [50; 0; 70];
-B = [50; 30; 20];
-C = [50; -30; 20];
+% Cinemática inversa para o ponto A
+qA = e.ikine(eye(4), 'rpy', [0, 0, 0], A, 'mask', [1, 1, 1, 0, 0, 0]);
 
-% Define as equações para a cinemática inversa
-e1 = A == transl;  % Substitua para B e C em iterações posteriores
+% Cinemática inversa para o ponto B
+qB = e.ikine(eye(4), 'rpy', [0, 0, 0], B, 'mask', [1, 1, 1, 0, 0, 0]);
 
-% Resolve o sistema de equações numericamente
-[s1, s2, s3] = vpasolve(e1, [q1, q2, q3]);
+% Cinemática inversa para o ponto C
+qC = e.ikine(eye(4), 'rpy', [0, 0, 0], C, 'mask', [1, 1, 1, 0, 0, 0]);
+
+
 
 
 

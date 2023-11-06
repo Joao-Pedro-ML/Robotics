@@ -69,7 +69,7 @@ end
 
 
 for i = 1:numel(T_matrices)
-    fprintf('Matriz de transformação para elo %d:\n', i);
+    fprintf('Matriz de transformação para a junta %d:\n', i);
     disp(T_matrices{i});
 end
 
@@ -92,49 +92,29 @@ disp(T_matrices{end});
 
 %% Exercício 4
 
-%e = ETS2.Tx(a1) * ETS2.Rz("q1") * ETS2.Tx(a2) * ETS2.Tx(a3) * ETS2.Rz("q3");
-
 clear all
 close all
 
 syms a1 a2 real
-e = ETS2.Tx(50) * ETS2.Rz("q1") * ETS2.Tx(50) * ETS2.Tx(50) * ETS2.Rz("q2") * ETS2.Tx(5);
+e = ETS3.Tz(a1)*ETS3.Rx("q1")*ETS3.Tx(a1)*ETS3.Tx(a1)*ETS3.Rz("q2")*ETS3.Tz(a2);
 
-syms q1 q2 q3 real
-TE = e.fkine([q1 q2 q3])
+syms q1 q2 real
+TE = e.fkine([q1 q2])
 transl = TE(1:2,3)';
+syms x y z real
 
-syms x y real
 e1 = x == transl(1)
 e2 = y == transl(2)
+e3 = z == transl(3)
 
-[s1,s2,s3] = solve([e1 e2],[q1 q2 q3])
-
-length(s2)
+[s1,s2] = solve([e1 e2],[q1 q2])
 
 %% Exercício 5
+% A(50,0,70), B(50,30,20) e C(50,-30,20) 
+subs(s2(2),[a1 a2 a3], [50 0 70])
+xfk = eval(subs(transl(1), [a1 a2 a3 q1 q2], [50 0 70 deg2rad(30) deg2rad(40)]))
 
-% Definição das variáveis simbólicas
-syms a1 a2 real
-e = ETS2.Tx(50) * ETS2.Rz("q1") * ETS2.Tx(50) * ETS2.Tx(50) * ETS2.Rz("q2") * ETS2.Tx(5);
 
-% Define as equações para a cinemática inversa
-syms q1 q2 q3 real
-TE = e.fkine([q1 q2 q3]);
-transl = TE(1:3, 3);
-
-% Define as coordenadas dos vértices do triângulo
-A = [50; 0; 70];
-B = [50; 30; 20];
-C = [50; -30; 20];
-
-% Define as equações para a cinemática inversa
-e1 = A == transl;  % Substitua para B e C em iterações posteriores
-e2 = B == transl;
-e3 = C == transl;
-
-% Resolve o sistema de equações numericamente
-[s1, s2, s3] = vpasolve(e1, [q1, q2, q3]);
 
 
 
