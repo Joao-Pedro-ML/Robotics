@@ -83,7 +83,7 @@ disp(T);
 
 %% Exercicio 4 e 5
 % A(50,0,70), B(50,30,20) e C(50,-30,20)
-e = ETS3.Rz("q1")*ETS3.Tz(50)*ETS3.Rx("q2")*ETS3.Tx(50)*ETS3.Rx("q3")*ETS3.Tx(50)*ETS3.Rx("q4")*ETS3.Tz(5)*ETS3.Rz("q5");
+e = ETS3.Rz("q1")*ETS3.Tz(500)*ETS3.Rx(-pi/2)*ETS3.Tx(50)*ETS3.Rz("q3")*ETS3.Tx(50)*ETS3.Rz("q4")*ETS3.Tx(5)*ETS3.Rz("q5");
 
 e.plot([0 0 0 0 0])
 
@@ -91,42 +91,25 @@ A=[50 0 70];
 B=[50 30 20];
 C=[50 -30 20];
 
-waypts = [A' B' C'];
-t = 0:0.02;10;
-[q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
-r=rateControl(50);
-i = 1;
-q = [0 0 0 0 0];
-while(1)
-    q = fminsearch(@(q) norm(se3(e.fkine(q)).trvec-[q2(1:3,i)' 0 0]), q); 
-    e.plot
-    r.waitfor;
-    if i == size(q2, 2)
-        i=0;
-    end
-    i = i + 1;
-end
-% r = rateControl(10);
-% g = [linspace(0, 2*pi, 100)'];
-% for i = 1:size(g,1)
-%     pstar = [70+20*cos(g(i)), 70+20*sin(g(i))]; %posição desejada
-%     q = fminsearch(@(q) norm(se2(e.fkine(q)).trvec-pstar),q);
-%     e.plot(q, 'workspace', [0 100 0 100 0 1])
-% 
+% waypts = [A' B' C' A'];
+% t = 0:0.05:10;
+% [q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
+% r=rateControl(1000000);
+% i = 1;
+% q = [0 0 0 0 0];
+% while(1)
+%     q = fminsearch(@(q) norm([se3(e.fkine(q)).trvec se3(e.fkine(q)).eul]-[q2(1:3,i)' 0 0 0]), q); 
+%     e.plot(q)
 %     r.waitfor;
+%     if i == size(q2, 2)
+%         i=0;
+%     end
+%     i = i + 1
+% 
 % end
 
+
 %%
-% Definição das posições desejadas para formar o triângulo (A, B, C)
-
-a1 = 1; a2=1;
-
-e = ETS3.Rz("q1")*ETS3.Ry("q2")*ETS3.Tz(a1)*ETS3.Ry("q3")*...
-    ETS3.Tz(a2)*ETS3.Rz("q4")*ETS3.Ry("q5")*ETS3.Rz("q6")
-
-e.plot([0 0 0 0 0 0])
-
-
 
 
 
