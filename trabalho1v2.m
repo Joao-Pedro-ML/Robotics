@@ -1,3 +1,7 @@
+%% Trabalho 1
+% João Pedro Moreto Lourenção
+% Bruno Keller Margaritelli
+
 %% Exercício 1
 a0 = 0; alpha0 = 0; d0 = 0; theta0 = "q0";
 a1 = 0; alpha1 = 0; d1 = 50; theta1 = "q1";
@@ -81,34 +85,31 @@ end
 fprintf('Matriz de transformação homogênea do atuador em função dos ângulos das juntas:\n');
 disp(T);
 
-%% Exercicio 4 e 5
+%% Exercicio 4 
 % A(50,0,70), B(50,30,20) e C(50,-30,20)
 e = ETS3.Rz("q1")*ETS3.Tz(50)*ETS3.Ry("q2")*ETS3.Tx(50)*ETS3.Ry("q3")*ETS3.Tx(50)*ETS3.Ry("q4")*ETS3.Tx(5)*ETS3.Ry("q5");
 
-%e.plot([0 0 0 0 0], 'jointdiam',1)
+e.plot([0 0 0 0 0], 'jointdiam',1)
 
 A=[50 0 70];
 B=[50 30 20];
 C=[50 -30 20];
 
-waypts = [A' B' C' A'];
-t = 0:0.05:10;
-[q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
-r=rateControl(1000000);
-i = 1;
-q = [0 0 0 0 0];
-while(1)
-     q = fminsearch(@(q) norm([se3(e.fkine(q)).trvec se3(e.fkine(q)).eul]-[q2(1:3,i)' 0 0 0]), q); 
-     e.plot(q,'jointdiam',1)
-     r.waitfor;
-     if i == size(q2, 2)
-         i=0;
-     end
-     i = i + 1;
-end
-
-
-%%
+% waypts = [A' B' C' A'];
+% t = 0:0.05:10;
+% [q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
+% r=rateControl(1000000);
+% i = 1;
+% q = [0 0 0 0 0];
+% while(1)
+%      q = fminsearch(@(q) norm([se3(e.fkine(q)).trvec se3(e.fkine(q)).eul]-[q2(1:3,i)' 0 0 0]), q); 
+%      e.plot(q,'jointdiam',1)
+%      r.waitfor;
+%      if i == size(q2, 2)
+%          i=0;
+%      end
+%      i = i + 1;
+% end
 
 
 

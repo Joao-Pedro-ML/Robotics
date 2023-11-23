@@ -1,14 +1,11 @@
-%% Exercício 1
-a0 = 0; alpha0 = 0; d0 = 0; theta0 = "q0";
-a1 = 0; alpha1 = 0; d1 = 50; theta1 = "q1";
-a2 = 50; alpha2 = -pi/2; d2 = 0; theta2 = "q2";
-a3 = 50; alpha3 = 0; d3 = 0; theta3 = "q3";
-a4 = 0; alpha4 = -pi/2; d4 = 0; theta4 = "q4";
-a5 = 0; alpha5 = 0; d5 = 5; theta5 = "q5";
+%% Trabalho 2 - Robótica
+% Exercício 1
 
-link0 = rigidBody("link0");
-link0.Joint = rigidBodyJoint("joint0","revolute");
-link0.Joint.setFixedTransform([a0 alpha0 d0 0],"dh");
+a1 = 2.075; alpha1 = 0; d1 = 0; theta1 = "q1";
+a2 = 0; alpha2 = -pi/2; d2 = 3.375; theta2 = "q2";
+a3 = 0; alpha3 = 0; d3 = -2.85; theta3 = "q3";
+a4 = 0; alpha4 = 0; d4 = -8.84; theta4 = "q4";
+a5 = 0; alpha5 = 0; d5 = -6.84; theta5 = "q5";
 
 link1 = rigidBody("link1");
 link1.Joint = rigidBodyJoint("joint1","revolute");
@@ -31,27 +28,21 @@ link5.Joint = rigidBodyJoint("joint5","revolute");
 link5.Joint.setFixedTransform([a5 alpha5 d5 0],"dh");
 
 myRobot = rigidBodyTree(DataFormat="row");
-myRobot.addBody(link0,myRobot.BaseName);
-myRobot.addBody(link1, link0.Name);
-myRobot.addBody(link2,link1.Name);
+myRobot.addBody(link1,myRobot.BaseName);
+myRobot.addBody(link2, link1.Name);
 myRobot.addBody(link3,link2.Name);
 myRobot.addBody(link4,link3.Name);
-myRobot.addBody(link5,link4.Name);
+myRobot.addBody(link5, link4.Name);
 
-myRobot.showdetails
 myRobot.show
-
-%% Exercício 2
-
-syms q0 q1 q2 q3 q4 q5; 
+%%
+syms q1 q2 q3 q4; 
 
 dh_parameters = [
-    0, 0, 0, q0;
     0, 0, 50, q1;
     50, -pi/2, 0, q2;
     50, 0, 0, q3;
     0, -pi/2, 0, q4;
-    0, 0, 5, q5;
 ];
 
 T = eye(4);
@@ -76,40 +67,39 @@ for i = 1:size(dh_parameters, 1)
     fprintf('\n');
 end
 
-%% Exercicio 3
+%% Exercício 2
+e = ETS3.Rz("q1")*ETS3.Tx(2.075)*ETS3.Ty(3.375)*...
+    ETS3.Tz(-2.85)*ETS3.Rx("q2")*ETS3.Tz(-8.84)*...
+    ETS3.Rx("q3")*ETS3.Tz(-6.84);
+leg = ets2rbt(e);
+se3(leg.getTransform([0 0 0],"link5")).trvec
+%leg.show;
 
-fprintf('Matriz de transformação homogênea do atuador em função dos ângulos das juntas:\n');
-disp(T);
+% Configurar os pontos de trajetória desejados
+xf = 0.25; xb = -xf; y = -0.25; zu = -0.1; zd = -0.25;
+via = [xf y zd xb y zd xb y zu xf y zu xf y zd];
 
-%% Exercicio 4 e 5
-% A(50,0,70), B(50,30,20) e C(50,-30,20)
-e = ETS3.Rz("q1")*ETS3.Tz(500)*ETS3.Rx(-pi/2)*ETS3.Tx(50)*ETS3.Rz("q3")*ETS3.Tx(50)*ETS3.Rz("q4")*ETS3.Tx(5)*ETS3.Rz("q5");
+% Criar uma trajetória de posição
+x = mstraj(via, [], [3 0.25 0.5 0.2], [], 0.01, 0.1);
 
-e.plot([0 0 0 0 0])
+% Calcular a cinemática inversa para a trajetória desejada
+qcycle = ikineTrajNum(leg, se3(eye(3), x), 'link5', 'weights', [0 0 0 1 1 1]);
 
-A=[50 0 70];
-B=[50 30 20];
-C=[50 -30 20];
+% Configurar o controle de taxa
+r = rateControl(50);
 
-% waypts = [A' B' C' A'];
-% t = 0:0.05:10;
-% [q2, qd2, qdd2] = trapveltraj(waypts, numel(t), EndTime=10);
-% r=rateControl(1000000);
-% i = 1;
-% q = [0 0 0 0 0];
-% while(1)
-%     q = fminsearch(@(q) norm([se3(e.fkine(q)).trvec se3(e.fkine(q)).eul]-[q2(1:3,i)' 0 0 0]), q); 
-%     e.plot(q)
-%     r.waitfor;
-%     if i == size(q2, 2)
-%         i=0;
-%     end
-%     i = i + 1
-% 
-% end
-
+% Executar a animação da trajetória
+for i = 1:size(qcycle, 1)
+    leg.show(qcycle(i, :), 'FastUpdate', true, 'PreservePlot', false);
+    r.waitfor;
+end
 
 %%
+
+
+
+
+
 
 
 

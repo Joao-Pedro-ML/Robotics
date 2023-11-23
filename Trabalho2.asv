@@ -1,0 +1,134 @@
+%% Trabalho 2 - Robótica
+% Exercício 1
+
+a1 = 0; alpha1 = 0; d1 = 2.075; theta1 = "q1";
+a2 = 0; alpha2 = -pi/2; d2 = 3.375; theta2 = "q2";
+a3 = 0; alpha3 = 0; d3 = -2.85; theta3 = "q3";
+a4 = 0; alpha4 = 0; d4 = 68.40; theta4 = "q4";
+a5 = 0; alpha5 = 0; d5 = 0; theta5 = "q5";
+
+link1 = rigidBody("link1");
+link1.Joint = rigidBodyJoint("joint1","revolute");
+link1.Joint.setFixedTransform([a1 alpha1 d1 0],"dh");
+
+link2 = rigidBody("link2");
+link2.Joint = rigidBodyJoint("joint2","revolute");
+link2.Joint.setFixedTransform([a2 alpha2 d2 0],"dh");
+
+link3 = rigidBody("link3");
+link3.Joint = rigidBodyJoint("joint3","revolute");
+link3.Joint.setFixedTransform([a3 alpha3 d3 0],"dh");
+
+link4 = rigidBody("link4");
+link4.Joint = rigidBodyJoint("joint4","revolute");
+link4.Joint.setFixedTransform([a4 alpha4 d4 0],"dh");
+
+myRobot = rigidBodyTree(DataFormat="row");
+myRobot.addBody(link1,myRobot.BaseName);
+myRobot.addBody(link2, link1.Name);
+myRobot.addBody(link3,link2.Name);
+myRobot.addBody(link4,link3.Name);
+
+myRobot.show
+
+syms q1 q2 q3 q4; 
+
+dh_parameters = [
+    0, 0, 50, q1;
+    50, -pi/2, 0, q2;
+    50, 0, 0, q3;
+    0, -pi/2, 0, q4;
+];
+
+T = eye(4);
+
+for i = 1:size(dh_parameters, 1)
+    a = dh_parameters(i, 1);
+    alpha = dh_parameters(i, 2);
+    d = dh_parameters(i, 3);
+    theta = dh_parameters(i, 4);
+    
+    A = [
+        cos(theta), -sin(theta) * cos(alpha), sin(theta) * sin(alpha), a * cos(theta);
+        sin(theta), cos(theta) * cos(alpha), -cos(theta) * sin(alpha), a * sin(theta);
+        0, sin(alpha), cos(alpha), d;
+        0, 0, 0, 1
+    ];
+    
+    T = T * A;
+    
+    fprintf('Matriz de transformação homogênea da Junta %d:\n', i);
+    disp(A);
+    fprintf('\n');
+end
+
+% e = ETS3.Rz("q1")*ETS3.Tx(2.075)*ETS3.Ty(3.375)*...
+%     ETS3.Tz(-2.85)*ETS3.Rx("q2")*ETS3.Tz(-8.84)*...
+%     ETS3.Rx("q3")*ETS3.Tz(-6.84);
+% 
+% syms q1 q2 q3 real
+% 
+% fprintf('Matriz de rotação em torno do eixo z')
+% Rz = [cos(q1) -sin(q1) 0 0; sin(q1) cos(q1) 0 0; 0 0 1 0; 0 0 0 1]
+% 
+% fprintf('Matriz de translação ao longo do eixo x')
+% Tx = [1 0 0 2.075; 0 1 0 0; 0 0 1 0; 0 0 0 1]
+% 
+% fprintf('Matriz de translação ao longo do eixo y')
+% Ty = [1 0 0 0; 0 1 0 3.375; 0 0 1 0; 0 0 0 1]
+% 
+% fprintf('Matriz de translação ao longo do eixo z')
+% Tz1 = [1 0 0 0; 0 1 0 0; 0 0 1 -2.85; 0 0 0 1]
+% 
+% fprintf('Matriz de rotação em torno do eixo x')
+% Rx1 = [1 0 0 0; 0 cos(q2) -sin(q2) 0; 0 sin(q2) cos(q2) 0; 0 0 0 1]
+% 
+% fprintf('Matriz de translação ao longo do eixo z')
+% Tz2 = [1 0 0 0; 0 1 0 0; 0 0 1 -8.84; 0 0 0 1]
+% 
+% fprintf('Matriz de rotação em torno do eixo x')
+% Rx2 = [1 0 0 0; 0 cos(q3) -sin(q3) 0; 0 sin(q3) cos(q3) 0; 0 0 0 1]
+% 
+% fprintf('Matriz de translação ao longo do eixo z')
+% Tz3 = [1 0 0 0; 0 1 0 0; 0 0 1 -6.84; 0 0 0 1]
+% 
+% fprintf('Matriz de transformação homogênea final')
+% T = Rz*Tx*Ty*Tz1*Rx1*Tz2*Rx2*Tz3
+
+%% Exercício 2
+e = ETS3.Rz("q1")*ETS3.Tx(2.075)*ETS3.Ty(3.375)*...
+    ETS3.Tz(-2.85)*ETS3.Rx("q2")*ETS3.Tz(-8.84)*...
+    ETS3.Rx("q3")*ETS3.Tz(-6.84);
+leg = ets2rbt(e);
+se3(leg.getTransform([0 0 0],"link5")).trvec
+%leg.show;
+
+% Configurar os pontos de trajetória desejados
+xf = 0.25; xb = -xf; y = -0.25; zu = -0.1; zd = -0.25;
+via = [xf y zd xb y zd xb y zu xf y zu xf y zd];
+
+% Criar uma trajetória de posição
+x = mstraj(via, [], [3 0.25 0.5 0.2], [], 0.01, 0.1);
+
+% Calcular a cinemática inversa para a trajetória desejada
+qcycle = ikineTrajNum(leg, se3(eye(3), x), 'link5', 'weights', [0 0 0 1 1 1]);
+
+% Configurar o controle de taxa
+r = rateControl(50);
+
+% Executar a animação da trajetória
+for i = 1:size(qcycle, 1)
+    leg.show(qcycle(i, :), 'FastUpdate', true, 'PreservePlot', false);
+    r.waitfor;
+end
+
+%%
+
+
+
+
+
+
+
+
+
